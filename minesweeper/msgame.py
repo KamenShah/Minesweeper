@@ -10,7 +10,7 @@ class MSGame(object):
     """Define a Mine Sweeper game."""
 
     def __init__(self, board_width, board_height, num_mines,
-                 port=5678, ip_add="127.0.0.1"):
+                 port=5678, ip_add="127.0.0.1", verbose = True):
         """The init function of Mine Sweeper Game.
 
         Parameters
@@ -44,6 +44,7 @@ class MSGame(object):
         else:
             self.num_mines = num_mines
 
+        self.verbose = verbose
         self.TCP_PORT = port
         self.TCP_IP = ip_add
         self.BUFFER_SIZE = 1024
@@ -135,6 +136,23 @@ class MSGame(object):
 
         return move_des
 
+
+    def playAutoMove(self, move_x, move_y):
+        self.board.click_field(move_x, move_y)
+
+        # check the status, see if end the game
+        if self.board.check_board() == 0:
+            self.game_status = 0  # game loses
+            # self.print_board()
+            self.end_game()
+        elif self.board.check_board() == 1:
+            self.game_status = 1  # game wins
+            # self.print_board()
+            self.end_game()
+        elif self.board.check_board() == 2:
+            self.game_status = 2  # game continues
+            # self.print_board()      
+
     def play_move(self, move_type, move_x, move_y):
         """Updat board by a given move.
 
@@ -189,16 +207,7 @@ class MSGame(object):
     def get_info_map(self):
         """Get info map."""
         return self.board.info_map
-
-    def get_probability_map(self):
-        board = self.board.info_map
-        probability_map = []
-        # if value is 0 => -1
-        # if value is [1, 8] => -1
-        # if value is 11 and 1 adjacent square is not 11 => probab
-        # if values is 11 and only surrounded by 11s => probability is dependent on bombs and # unclicked squares
-        # if value is 11 to calculate probability you need to check how many adjacent square is [1-8] => based on how many adjacent squares is [1-8] you need to calculate probability
-        
+  
 
     def get_mine_map(self):
         """Get mine map."""
@@ -209,9 +218,9 @@ class MSGame(object):
 
         TODO: some more expections..
         """
-        if self.game_status == 0:
+        if self.game_status == 0 and self.verbose:
             print("[MESSAGE] YOU LOSE!")
-        elif self.game_status == 1:
+        elif self.game_status == 1 and self.verbose:
             print("[MESSAGE] YOU WIN!")
 
     def parse_move(self, move_msg):
@@ -250,7 +259,8 @@ class MSGame(object):
     def tcp_accept(self):
         """Waiting for a TCP connection."""
         self.conn, self.addr = self.tcp_socket.accept()
-        print("[MESSAGE] The connection is established at: ", self.addr)
+        if self.verbose:
+            print("[MESSAGE] The connection is established at: ", self.addr)
         self.tcp_send("> ")
 
     def tcp_receive(self):

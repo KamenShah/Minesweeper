@@ -9,9 +9,9 @@ game = MSGame(10, 10, 5)
 
 game.help()
 
+print(game.get_mine_map())
+print(game.get_info_map())
 
-# print(game.get_info_map())
-# print(game.get_mine_map())
 
 
 while game.game_status == 2:
@@ -21,5 +21,6 @@ while game.game_status == 2:
     game.print_board()
     move = input("Move: ")
     game.play_move_msg(move)
+    print(game.get_info_map())
 
-print(game.get_mine_map())
+
