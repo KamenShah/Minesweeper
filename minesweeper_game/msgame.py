@@ -3,14 +3,14 @@
 
 from __future__ import print_function
 import socket
-from minesweeper.msboard import MSBoard
+from minesweeper_game.msboard import MSBoard
 
 
 class MSGame(object):
     """Define a Mine Sweeper game."""
 
     def __init__(self, board_width, board_height, num_mines,
-                 port=5678, ip_add="127.0.0.1", verbose = True):
+                 port=5678, ip_add="127.0.0.1", verbose = True, over_tcp=False):
         """The init function of Mine Sweeper Game.
 
         Parameters
@@ -51,7 +51,7 @@ class MSGame(object):
 
         self.move_types = ["click", "flag", "unflag", "question"]
 
-        self.init_new_game()
+        self.init_new_game(with_tcp=over_tcp)
 
     def init_new_game(self, with_tcp=False):
         """Init a new game.
@@ -261,7 +261,7 @@ class MSGame(object):
         self.conn, self.addr = self.tcp_socket.accept()
         if self.verbose:
             print("[MESSAGE] The connection is established at: ", self.addr)
-        self.tcp_send("> ")
+        self.tcp_send("> ".encode())
 
     def tcp_receive(self):
         """Receive data from TCP port."""
@@ -275,6 +275,7 @@ class MSGame(object):
 
     def tcp_send(self, data):
         """Send data from TCP port."""
+        
         self.conn.send(data)
 
     def tcp_close(self):
