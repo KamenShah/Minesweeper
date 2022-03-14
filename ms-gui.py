@@ -47,7 +47,8 @@ def ms_game_main(board_width, board_height, num_mines, port, ip_add):
 
     fun_wg = gui.ControlWidget()
     grid_wg = gui.GameWidget(ms_game, fun_wg)
-    remote_thread = gui.RemoteControlThread()
+#     remote_thread = gui.RemoteControlThread()
+    remote_thread = gui.RemoteControlThreadMLModel()
 
     def update_grid_remote(move_msg):
         """Update grid from remote control."""

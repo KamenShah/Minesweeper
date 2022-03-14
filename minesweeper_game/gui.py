@@ -19,6 +19,7 @@ from minesweeper_solver import Solver
 from minesweeper_solver.policies import corner_then_edge2_policy
 
 import numpy as np
+import pickle 
 
 
 FLAG_PATH = join(minesweeper_game.PACKAGE_IMGS_PATH, "flag.png")
@@ -224,6 +225,10 @@ class FieldWidget(QLabel):
                     self.field_width*3, self.field_height*3))
             self.setStyleSheet('QLabel {background-color: blue;}')
 
+            
+            
+            
+            
 
 class RemoteControlThread(QtCore.QThread):
     """Thread that covers remote control."""
@@ -263,14 +268,14 @@ class RemoteControlThread(QtCore.QThread):
             if best_prob != 0:
                 x, y = corner_then_edge2_policy(prob)
                 self.transfer.emit("click: " + str(x) + ", " + str(y))
-                time.sleep(1)
+                time.sleep(0.5)
             else:
                 # Open all the knowns.
                 for x, y in zip(xs, ys):
                     if self.ms_game.game_status  != 2:
                         break
                     self.transfer.emit("click: " + str(x) + ", " + str(y))
-                    time.sleep(1)
+                    time.sleep(0.5)
  
 
 
@@ -281,7 +286,7 @@ class RemoteControlThreadMLModel(QtCore.QThread):
 
     def __init__(self):
         """Init function of the thread."""
-        super(RemoteControlThread, self).__init__()
+        super(RemoteControlThreadMLModel, self).__init__()
 
         self.exiting = False
 
@@ -294,32 +299,125 @@ class RemoteControlThreadMLModel(QtCore.QThread):
         """Start thread control."""
         self.ms_game = ms_game
         self.start()
-        
- 
+      
+
+    def getSearchSpace(self, padding):
+        searchSpace = []
+        for i in range(-padding, padding+1):
+            for j in range(-padding, padding+1):
+                searchSpace.append([i,j])
+
+        return searchSpace
+    
+    
+    # FeautureType: 1, Create baseline feature map from minesweeper grid without any data manipulation
+    def createBaseFeatures(self, x, y, grid, padding= 5,  fillerValue= -1):
+        features = []
+        for i, j in self.getSearchSpace(padding):
+            newX = x + i
+            newY = y + j
+            if x == newX and y == newY:
+                continue
+            if len(grid) > newX >= 0 and len(grid[0]) > newY >= 0:   
+                if grid[newX][newY] == 11:
+                    features.append(0)
+                else:
+                    features.append(grid[newX][newY])
+            else:
+                features.append(fillerValue)
+
+        return features
+
+    
+    
+
+
+    # FeautureType: 2, Create feautures using naive approach: for every square that is 11, find proportion of border squares
+    def createNaiveFeatures(self, x, y, grid,  padding= 5, fillerValue= -1):
+        features = []
+        for i, j in self.getSearchSpace(padding):
+            newX = x + i
+            newY = y + j
+            if len(grid) > newX >= 0 and len(grid[0]) > newY >= 0:
+                if grid[newX][newY] == 11:
+                    val = 0
+                    for n, m in [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]:
+                        tempX = newX + n
+                        tempY = newY + m
+                        if len(grid) > tempX >= 0 and len(grid[0]) > tempY >= 0:  
+                            if grid[tempX][tempY] != 11 and grid[tempX][tempY] != 0:
+                                val += 1
+                    features.append(val/8)
+                else:
+                    features.append(grid[newX][newY])
+            else:
+                features.append(fillerValue)
+
+        return features
+
+
+    # FeautureType: 3, Create feautures using Probabilistic approach: use algorithm to deduce bomb probabilities
+    def createProbabilityFeatures(self, x, y, probabilities, padding= 5, fillerValue= -1):
+        features = []
+        for i, j in self.getSearchSpace(padding):
+            newX = x + i
+            newY = y + j
+            if len(probabilities) > newX >= 0 and len(probabilities[0]) > newY >= 0:  
+                if np.isnan(probabilities[newX][newY]):
+                    features.append(0)
+                else:
+                    features.append(probabilities[newX][newY])
+            else:
+                features.append(fillerValue)
+
+        return features    
+
+    def findValidMoves(self, grid):
+        validMoves = []
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j] == 11:
+                    validMoves.append([i,j])
+        return validMoves
+
 
     def run(self):
         """Thread behavior."""
         self.ms_game.tcp_accept()
         
-        model = picle.load('model.pkl')
+        import os
+        print(os.path.abspath(os.getcwd()))
+        
+        with open('model.pkl', 'rb') as f:
+            model = pickle.load(f)
 
+        featureType = 1
+        padding = 5
+        
         if featureType == 1:
-            featureExtractor = createBaseFeatures
+            featureExtractor = self.createBaseFeatures
         elif featureType == 2:
-            featureExtractor = createNaiveFeatures    
+            featureExtractor = self.createNaiveFeatures    
         elif featureType == 3:
-            featureExtractor = createProbabilityFeatures
+            featureExtractor = self.createProbabilityFeatures
 
 
 
-        while game.game_status  == 2:
-            moves = findValidMoves(self.ms_game.get_info_map())
+        while self.ms_game.game_status  == 2:
+            moves = self.findValidMoves(self.ms_game.get_info_map())
             moveProbabilities = []
             for move in moves:
-                feat = featureExtractor(move[0], move[1], self.ms_game.get_info_map())
+                if featureType == 3:
+                    board = self.ms_game.get_info_map()
+                    board = np.where(board == 11, None, board)
+                    probabilities = solver.solve(board)
+                    feat = featureExtractor(move[0], move[1], probabilities, padding=padding)
+                else:
+                    feat = featureExtractor(move[0], move[1], self.ms_game.get_info_map(), padding= padding)
+                
                 probability = model.predict_proba([feat])
                 moveProbabilities.append((move, probability[0]))
-
+                                
             moveProbabilities.sort(key=lambda x:x[1][0], reverse=True)
 
             choice, nonBombProbability = moveProbabilities[0]
