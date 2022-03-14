@@ -16,6 +16,9 @@ To download the dependencies, run the following command:
 
 pip install requirements.txt
 
+## How to Run
+
+To run the machine learning methods, walk through the jupyter notebook found at minesweeper_solver.ipynb. This notebook goes through extracting datasets, training models as well as simulating games. To see a visual simulation of the minesweeper solver, run ms-gui.py and subsequently run the notebook runGui.ipynb. You will see a popup game appear with the solver making moves every 0.5 seconds. 
 
 ## The Minesweeper game
 
