@@ -47,3 +47,10 @@ Use constraint programming to find all valid models assigning a number of mines 
 Combine model counts and probabilities of each area into aggregated counts and probabilities for the component.
 Combine the components and again aggregate the model counts and probabilities, then weigh the probabilities by the model counts.
 For more detail, please reference the code and the more elaborate explanation in the comments of minesweeper_solver/solver.py.
+
+
+
+## Images and Videos
+
+Images containing analytics can be found in the /images folder.
+Videos of simulating the game with agents can be found in the /videos folder.
