@@ -1,5 +1,5 @@
 # MineSweeper
-
+## CSC 481 - Knowledge Based Systems at Cal Poly - taught by Dr. Rodrigo Canaan
 [![PyPI](https://img.shields.io/pypi/v/minesweeper.svg?maxAge=2592000)](https://github.com/duguyue100/minesweeper)
 [![PyPI](https://img.shields.io/pypi/pyversions/minesweeper.svg?maxAge=2592000)](https://github.com/duguyue100/minesweeper)
 
