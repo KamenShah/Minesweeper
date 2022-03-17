@@ -392,7 +392,7 @@ class RemoteControlThreadMLModel(QtCore.QThread):
             model = pickle.load(f)
 
         featureType = 1
-        padding = 5
+        padding = 2
         
         if featureType == 1:
             featureExtractor = self.createBaseFeatures
